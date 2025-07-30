@@ -32,7 +32,10 @@ def _parse_findings(filename: str, ignore_metrics=True):
                 consume_header(line.rstrip())
             else:
                 onefind = consume_data(line.rstrip())
-                if onefind and (not ignore_metrics or onefind.get('Family', '') != 'Code Metric'):
+                if onefind and (
+                    onefind.get('Color', '') != 'Green'
+                    and (not ignore_metrics or onefind.get('Family', '') != 'Code Metric')
+                ):
                     findings.append(onefind)
     # --
     return findings
