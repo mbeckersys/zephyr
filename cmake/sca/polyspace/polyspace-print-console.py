@@ -12,6 +12,17 @@ import sys
 from collections import Counter
 
 
+def hide_finding(finding, ignore_metrics):
+    """Hide some findings that have no value"""
+    if finding.get('Color', '') == 'Green':
+        return True
+    if finding.get('Family', '') == 'Global Variable' and finding.get('Group', '') == 'Not shared':
+        return True
+    if ignore_metrics and finding.get('Family', '') == 'Code Metric':
+        return True
+    return False
+
+
 def _parse_findings(filename: str, ignore_metrics=True):
     """Parse CSV file"""
     csv_sep = '\t'  # Polyspace default separator
@@ -22,7 +33,8 @@ def _parse_findings(filename: str, ignore_metrics=True):
 
     def consume_data(oneline):
         columns = oneline.split(csv_sep)
-        return dict(zip(header, columns, strict=True))
+        # line/col columns are missing for project-wide metrics
+        return dict(zip(header, columns, strict=False))
 
     findings = []
     header = []
@@ -32,10 +44,7 @@ def _parse_findings(filename: str, ignore_metrics=True):
                 consume_header(line.rstrip())
             else:
                 onefind = consume_data(line.rstrip())
-                if onefind and (
-                    onefind.get('Color', '') != 'Green'
-                    and (not ignore_metrics or onefind.get('Family', '') != 'Code Metric')
-                ):
+                if onefind and not hide_finding(onefind, ignore_metrics):
                     findings.append(onefind)
     # --
     return findings
